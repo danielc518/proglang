@@ -513,7 +513,13 @@ let rec g_matrix_multiply plus times xss yss = let (r_x,c_x) = dimensions xss in
       [8 Points]
 *)
 
-let rec fetch_column grid col = ();; (* ANSWER *)
+let rec fetch_col_helper t_grid col =
+	match t_grid with
+	| [] -> []
+	| xs :: xss -> if col = 0 then xs
+								else fetch_col_helper xss (col-1);;
+
+let rec fetch_column grid col = fetch_col_helper (transpose grid) col;; (* ANSWER *)
 
 (*
 # fetch_column solved_grid_1 4 ;;
@@ -529,7 +535,28 @@ let rec fetch_column grid col = ();; (* ANSWER *)
       [10 Points]
 *)
 
-let rec fetch_grid grid start_row start_col row_count col_count = ();; (* ANSWER *)
+let rec append xs ys =
+	match xs with 
+	| [] -> ys
+	| x :: xs -> x :: append xs ys
+
+let rec fetch_grid_helper xs start_col col_count =
+	match xs with
+	| [] -> []
+	| x :: xs -> if col_count > 0 then
+									if start_col = 0 then
+										x :: fetch_grid_helper xs start_col (col_count-1)
+									else fetch_grid_helper xs (start_col-1) col_count
+							 else [];;
+
+let rec fetch_grid grid start_row start_col row_count col_count = 
+	match grid with 
+	| [] -> []
+	| xs :: xss -> if row_count > 0 then
+										if start_row = 0 then
+											append (fetch_grid_helper xs start_col col_count) (fetch_grid xss start_row start_col (row_count-1) col_count)
+										else fetch_grid xss (start_row-1) start_col row_count col_count
+								 else [];; (* ANSWER *)
 
 (*
 # fetch_grid solved_grid_1 3 6 3 3  ;;
@@ -545,7 +572,28 @@ let rec fetch_grid grid start_row start_col row_count col_count = ();; (* ANSWER
       [5 Points]
 *)
 
-let rec verify_list lst = ();; (* ANSWER *)
+(* From lecture note *)
+let rec contains x l = 
+  match l with
+    [] -> false
+  | y :: ys -> x = y || contains x ys
+;;
+
+(* From lecture note *)
+let rec diff l1 l2 = 
+  match l1 with
+    [] -> []
+  | x :: xs -> 
+      if contains x l2 then
+	diff xs l2
+      else
+	x :: diff xs l2
+;;
+
+let rec verify_list lst =
+	match diff [1;2;3;4;5;6;7;8;9] lst with 
+	| [] -> true
+	| x :: xs -> false;; (* ANSWER *)
 
 (*
 # verify_list [4; 2; 3; 7; 9; 1; 8; 5; 6] ;;
@@ -560,7 +608,43 @@ let rec verify_list lst = ();; (* ANSWER *)
       [10 Points]
 *)
 
-let rec verify_grid grid = ();; (* ANSWER *)
+let rec verify_grid_row grid =
+	match grid with
+	| [] -> true
+	| xs :: xss -> if verify_list xs then
+										verify_grid_row xss
+									else
+										false;; 
+
+let rec verify_grid_col grid col =
+	if col < 9 then if verify_list (fetch_column grid col) then
+										verify_grid_col grid (col+1)
+									else
+										false
+	else
+		true;;
+
+let rec verify_grid_block_helper grid row col =
+	if col < 9 then if verify_list (fetch_grid grid row col 3 3) then
+										verify_grid_block_helper grid row (col+3)
+									else
+										false
+	else
+		true;; 
+
+let rec verify_grid_block grid row =
+	if row < 9 then if verify_grid_block_helper grid row 0 then
+										verify_grid_block grid (row+3)
+									else
+										false
+	else
+		true;;
+
+let rec verify_grid grid = 
+	let valid_rows = verify_grid_row grid in
+	let valid_cols = verify_grid_col grid 0 in
+	let valid_blocks = verify_grid_block grid 0 in
+	valid_rows && valid_cols && valid_blocks;; (* ANSWER *)
 
 (*
 # verify_grid solved_grid_1 ;;
