@@ -211,14 +211,21 @@ let triangles =
 
 let rec filter_map_sequence : ('a -> 'b option) -> 'a sequence -> 'b sequence =
     fun f s ->
-    (* ANSWER *) ;;
+			match s with
+			| Nil -> Nil
+			| Sequence(elem, fn) ->
+				match f elem with
+				| None -> filter_map_sequence f (fn ())
+				| Some x -> Sequence(x, fun () -> filter_map_sequence f (fn ())) (* ANSWER *) ;;
 
 (*
   2f. Write a map and filter functions (analogous to List.map and List.filter)
       using your implementation of filter_map_sequence.
 *)
 
-let rec map_sequence fn s = (* ANSWER *) ;;
+let rec map_sequence fn s = 
+	let f = fun x -> Some (fn x)
+	in filter_map_sequence f s (* ANSWER *) ;;
 
 (*
 # list_of_sequence(map_sequence (fun x -> x * 2) (ap 0 10 2)) ;;
@@ -229,7 +236,10 @@ let rec map_sequence fn s = (* ANSWER *) ;;
  'P'; 'Q'; 'R'; 'S'; 'T'; 'U'; 'V'; 'W'; 'X'; 'Y'; 'Z']
 *)
 
-let rec filter_sequence fn s = (* ANSWER *) ;;
+let rec filter_sequence fn s = 
+	let f = fun x -> 
+		if (fn x) then Some x else None
+	in filter_map_sequence f s (* ANSWER *) ;;
 
 (*
 # list_of_sequence(filter_sequence (fun x -> x mod 3 = 0) (ap 0 12 2)) ;;
@@ -315,17 +325,28 @@ val q4 : int GHeap.heap = <abstr>
 (* Write the following functions for your heap; you should not need to add them to your interface. *)
 
 (* This function takes a list of elements and inserts each of them into the heap *)
-let rec insert_many (xs : 'a list) (h : 'a heap) : 'a heap = (* ANSWER *);;
+let rec insert_many (xs : 'a list) (h : 'a heap) : 'a heap = 
+	match xs with
+	| [] -> h
+	| x :: xs -> insert_many xs (GHeap.insert x h) (* ANSWER *);;
 
 (* This function returns the smallest element in the heap *)
-let rec get_min (h : 'a heap) : 'a = (* ANSWER *);;
+let rec get_min (h : 'a heap) : 'a = 
+	match GHeap.find_min h with 
+	| None -> None
+	| Some (x, xs) -> x (* ANSWER *);;
 
 (* This function returns the heap with its smalles element deleted *)
-let rec delete_min (h : 'a heap) : 'a heap = (* ANSWER *);;
+let rec delete_min (h : 'a heap) : 'a heap = 
+	match GHeap.find_min h with 
+	| None -> None
+	| Some (x, xs) -> xs (* ANSWER *);;
 
 (* Now write "heap sort" (or at least, it would be heap sort if your heap were efficient) *)
 
-let rec heap_sort (xs : 'a list) : 'a list = (* ANSWER *);;
+let rec heap_sort (xs : 'a list) : 'a list = 
+	let heap = GHeap.empty ()
+	in GHeap.as_sorted_list (insert_many xs heap) (* ANSWER *);;
 
 (* -------------------------------------------------------------------------------------------------- *)
 (* Section 4 : Symbolic Computations                                                                  *)
@@ -343,7 +364,9 @@ let rec heap_sort (xs : 'a list) : 'a list = (* ANSWER *);;
 *)
 
 (* 4a. Write a function to evaluate a polynomial at a particular input *)
-let rec eval_polynomial p n = (* ANSWER *) ;;
+let rec eval_polynomial p n = 
+	let f = fun value coeffcients -> value * n + coeffcients
+	in List.fold_left f 0 (List.rev p) (* ANSWER *) ;;
 
 (*
 # eval_polynomial [0] 4 ;;
@@ -357,7 +380,17 @@ let rec eval_polynomial p n = (* ANSWER *) ;;
 (* 4b. Write a function compute the derivative of a polynomial
 
    https://en.wikipedia.org/wiki/Polynomial#Calculus *)
-let rec deriv p = (* ANSWER *) ;;
+let rec deriv p = 
+	let rec derivative lst n = 
+		match lst with
+		| [] -> []
+		| hd :: tl -> 
+			if n = 0 then 
+				match tl with
+				| [] -> [0]
+				| h :: t -> derivative tl 1
+			else (n * hd) :: derivative tl (n + 1)
+	in derivative p 0 (* ANSWER *) ;;
 (*
 # deriv [1] ;;
 - : int list = [0]
@@ -368,7 +401,12 @@ let rec deriv p = (* ANSWER *) ;;
 (*
   4c. Write a function to add two polynomials
 *)
-let rec add_poly p1 p2 = (* ANSWER *) ;;
+let rec add_poly p1 p2 = 
+	match (p1, p2) with 
+	| [], [] -> []
+	| [], y :: ys -> y :: ys
+	| x :: xs, [] -> x :: xs
+	| x :: xs, y :: ys -> (x + y) :: (add_poly xs ys) (* ANSWER *) ;;
 
 (*
 # add_poly [1;2] [3;0;4] ;;
@@ -379,7 +417,15 @@ let rec add_poly p1 p2 = (* ANSWER *) ;;
   4d. Write a function to multiply two polynomials.
 *)
 
-let rec mul_poly p1 p2 = (* ANSWER *) ;;
+let rec mul_poly p1 p2 = 
+	if p1 = [] || p2 = [] then [] else
+	let rec shift_right lst n = if n = 0 then lst else shift_right (0 :: lst) (n - 1) in
+	let rec mult_mono lst x n = shift_right (List.map (fun c -> x * c) lst) n in
+	let rec multiply lst1 lst2 acc n = 
+		match lst2 with
+		| [] -> acc
+		| hd :: tl -> multiply lst1 tl (add_poly acc (mult_mono p1 hd n )) (n + 1) in
+	multiply p1 p2 [0] 0 (* ANSWER *) ;;
 
 (*
 # mul_poly [-1] [3;0;4] ;;
@@ -394,7 +440,50 @@ let rec mul_poly p1 p2 = (* ANSWER *) ;;
       a quotient and a remainder.
 *)
 
-let rec div_poly p1 p2 = (* ANSWER *) ;;
+let rec remove_zeros lst = 
+	match lst with
+	| [] -> []
+	| hd :: tl -> 
+		if hd = 0 then remove_zeros tl
+		else lst ;;
+
+let rec add_zeroes_right n l = 
+	if n > 0 then add_zeroes_right (n - 1) (l @ [0]) else l ;;
+
+let rec add_zeroes_left n l = 
+		if n > 0 then add_zeroes_left (n - 1) (0 :: l) else l ;;
+
+let rec div_poly p1 p2 = 
+	let map f lst1 lst2 = 
+		let diff = (List.length lst1) - (List.length lst2) in
+		List.map2 f (add_zeroes_left (-diff) lst1) (add_zeroes_left diff lst2) in
+		let rec divide p_1 p_2 quo_acc =
+			let degree_p_1 = List.length p_1 - 1 in
+			let degree_p_2 = List.length p_2 - 1 in
+			let degree_diff = degree_p_1 - degree_p_2 in
+			if degree_diff < 0 then (quo_acc, p_1) 
+			else
+				if List.hd p_2 = 0 then ([], []) else
+				let r = (List.hd p_1) / (List.hd p_2) in
+				let flt_r = float (List.hd p_1) /. float (List.hd p_2) in
+				if float r <> flt_r then 
+					let rem = map (-) (List.rev p1) (List.rev p2) in
+					if List.for_all (fun x -> x > -1) rem then ([1], rem)
+					else ([], List.rev p1)
+				else
+				let r_p2 = List.map (( * ) r) (add_zeroes_right degree_diff p_2) in
+				let new_quo_acc = map (+) quo_acc (add_zeroes_right degree_diff [r]) in
+				let new_p1 = remove_zeros (List.tl (map (-) p_1 r_p2)) in
+				divide new_p1 p_2 new_quo_acc in
+				match divide (List.rev p1) (List.rev p2) [] with
+				| ( x :: xs, y :: ys) -> 
+					let quotient  = List.rev (remove_zeros (x :: xs)) in
+					let remainder = List.rev (remove_zeros (y :: ys)) in
+					(quotient, remainder) 
+				| ( x :: xs, []) -> (List.rev (remove_zeros (x :: xs)), [0])
+				| (_, y :: ys) -> ([0], List.rev (remove_zeros (y :: ys))) 
+				| ([], []) -> ([], []) (* ANSWER *) ;;
+		
 
 (*
 # div_poly [3;3;4;4] [3;0;4] ;;
@@ -409,7 +498,28 @@ let rec div_poly p1 p2 = (* ANSWER *) ;;
 
       https://en.wikipedia.org/wiki/Greatest_common_divisor
 *)
-let rec gcd p1 p2 = (* ANSWER *) ;;
+let rec gcd p1 p2 = 
+	match p2 with
+	| [] -> p1
+	| x :: xs -> 
+		if List.length p2 = 1 && x = 0 then p1
+		else 
+			if List.length p1 < List.length p2 then gcd p2 p1 
+			else
+				let (q1, r1) = div_poly p1 p2 in 
+				let (q2, r2) = div_poly p2 p1 in 
+				if r1 = p1 && r2 = p2 then 
+					if List.length p1 = List.length p2 then [1]
+					else 
+						if List.for_all (fun x -> x mod 2 = 0) p2 then
+							let (q, r) = (div_poly p2 [2]) in gcd p1 q
+						else if List.for_all (fun x -> x mod 3 = 0) p2 then
+							let (q, r) = (div_poly p2 [3]) in gcd p1 q
+						else
+							[1]
+				else 
+					if r1 = p1 then gcd p1 r2 
+					else gcd p2 r1 (* ANSWER *) ;;
 
 (*
 # gcd [3;3;4;4] [3;0;4] ;;
@@ -443,14 +553,19 @@ let rec gcd p1 p2 = (* ANSWER *) ;;
   Given any function f as an argument, create a function that returns a
   data structure consisting of f and its cache
 *)
-let new_cached_fun f = () (* ANSWER *)
+let new_cached_fun f = (f, ref []) (* ANSWER *) ;;
 
 (*
   Write a function that takes the above function-cache data structure,
   applies an argument to it (using the cache if possible) and returns
   the result
 *)
-let apply_fun_with_cache cached_fn x = () (* ANSWER *)
+let apply_fun_with_cache cached_fn x = 
+	let (f, lst) = cached_fn in
+	try 
+		Pervasives.snd (List.find (fun (k, _) -> k = x) !lst)
+	with Not_found -> let value = f x in
+		lst := (x, value) :: !lst; value (* ANSWER *) ;;
 
 (*
   The following function makes a cached version for f that looks
