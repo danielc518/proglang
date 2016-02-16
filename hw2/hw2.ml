@@ -330,13 +330,13 @@ let rec insert_many (xs : 'a list) (h : 'a heap) : 'a heap =
 (* This function returns the smallest element in the heap *)
 let rec get_min (h : 'a heap) : 'a = 
 	match GHeap.find_min h with 
-	| None -> None
+	| None -> raise (Failure "Heap is empty!")
 	| Some (x, xs) -> x (* ANSWER *);;
 
 (* This function returns the heap with its smalles element deleted *)
 let rec delete_min (h : 'a heap) : 'a heap = 
 	match GHeap.find_min h with 
-	| None -> None
+	| None -> h
 	| Some (x, xs) -> xs (* ANSWER *);;
 
 (* Now write "heap sort" (or at least, it would be heap sort if your heap were efficient) *)
