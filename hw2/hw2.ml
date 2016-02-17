@@ -371,7 +371,7 @@ let rec eval_polynomial p n =
 # eval_polynomial [1;0;1] 4 ;;
 - : int = 17
 # eval_polynomial [3;2;1] (-2) ;;
-- : int = 0
+- : int = 3
 *)
 
 (* 4b. Write a function compute the derivative of a polynomial
