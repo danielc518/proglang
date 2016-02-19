@@ -458,16 +458,13 @@ let rec div_poly p1 p2 =
 			let degree_p_1 = List.length p_1 - 1 in
 			let degree_p_2 = List.length p_2 - 1 in
 			let degree_diff = degree_p_1 - degree_p_2 in
-			if degree_diff < 0 then (quo_acc, p_1) 
+			if degree_diff < 0 then 
+				let rem = map (-) p1 (mul_poly (List.rev (remove_zeros quo_acc)) p2) in
+				(quo_acc, remove_zeros (List.rev rem)) 
 			else
 				if List.hd p_2 = 0 then ([], []) else
-				let r = (List.hd p_1) / (List.hd p_2) in
 				let flt_r = float (List.hd p_1) /. float (List.hd p_2) in
-				if float r <> flt_r then 
-					let rem = map (-) (List.rev p1) (List.rev p2) in
-					if List.for_all (fun x -> x > -1) rem then ([1], rem)
-					else ([], List.rev p1)
-				else
+				let r = int_of_float (flt_r) in
 				let r_p2 = List.map (( * ) r) (add_zeroes_right degree_diff p_2) in
 				let new_quo_acc = map (+) quo_acc (add_zeroes_right degree_diff [r]) in
 				let new_p1 = remove_zeros (List.tl (map (-) p_1 r_p2)) in
