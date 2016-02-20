@@ -24,3 +24,7 @@ setup.log
 External Files
 .paths
 .project
+
+# fbdk directory
+fbdk-1.23-byte/
+
