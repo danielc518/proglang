@@ -27,4 +27,6 @@ External Files
 
 # fbdk directory
 fbdk-1.23-byte/
+fbdk-1.23/
+!fbdk-1.23/src/Fb/fbinterp.ml
 

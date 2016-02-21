@@ -40,7 +40,29 @@
 
 *)
 
-(* ANSWER *)
+(* 
+Due to the size of the proof, it is broken into multiple parts. 
+We use v => * as an abbreviation for v => v (when v is lengthy) for brevity.
+
+Part 1.
+
+--------------------------  ------------  ---------------------
+Fun f -> Fun y -> y f => *  True => True  Fun y -> y True => *
+---------------------------------------------------------------
+(Fun f -> Fun y -> y f) True => Fun y -> y True
+
+Part 2.
+
+                                                                                               ------------  ------
+                                                                                               True => True  1 => 1
+                                               --------------------------------  ------------  ---------------------------
+                                               Fun z -> If z Then 1 Else 0 => *  True => True  If True Then 1 Else 0 => 1
+-----------  --------------------------------  ---------------------------------------------------------------------------
+(by part 1)  Fun z -> If z Then 1 Else 0 => *  (Fun z -> If z Then 1 Else 0) True => 1
+--------------------------------------------------------------------------------------------------------------------------
+(Fun f -> Fun y -> y f) True (Fun z -> If z Then 1 Else 0) => 1
+
+*)
 
 (*
   1b. Many languages provide a way to chain If-Then-Else expressions. Fb
@@ -56,7 +78,10 @@
   similar to the evaluation of the "Else If" chain in Fb.
 *)
 
-(* ANSWER *)
+(*
+
+
+*)
 
 (*
   1c. The Freeze and Thaw operations are defined as macros in the book. But it
@@ -65,7 +90,13 @@
   the operational semantics for both.
 *)
 
-(* ANSWER *)
+(*
+
+e2[e1/x] => v
+-----------------------------
+Let x = Freeze e1 In e2 => v
+
+*)
 
 
 (* -------------------------------------------------------------------------------------------------- *)
@@ -98,8 +129,12 @@ let fb_identity_parsed = parse "Function x -> x";;
 
 let fb_identity_ast = Function(Ident("x"), Var(Ident("x")));;
 
+let combY = parse "Function body -> 
+    (Function fun -> Function arg -> fun fun arg)
+      (Function this -> Function arg -> body (this this) arg)";;
+
 (*
-  1a. Fb is such a minimalisitc language that it does not even include a
+  2a. Fb is such a minimalisitc language that it does not even include a
       less-than operation. But it is possible to create one of your own.
 
       But we're not going to ask you to create a less-than operation (that is, a
@@ -114,17 +149,27 @@ let fb_identity_ast = Function(Ident("x"), Var(Ident("x")));;
       [5 Points]
 *)
 
-let fbCond = parse "" ;; (* ANSWER *)
+let fbCond = Appl(Appl(combY, parse "Function this -> Function arg ->
+	  Function x -> Function f1 -> Function f2 -> Function f3 ->
+    If x = 0 
+			Then f2 0 
+		Else 
+			If (x + arg) = 0 
+				Then f1 x 
+			Else 
+				If (x - arg) = 0 
+					Then f3 x 
+				Else (this (arg + 1) x f1 f2 f3)"), Int 0);; (* ANSWER *)
 
 (*
 # ppeval (Appl(parse
-  "Fun fblt -> fblt 3 (Fun a -> 1) (Fun b -> 0) (Fun c -> c + 1)"
-  , fblt)) ;;
+  "Fun fbCond -> fbCond 3 (Fun a -> 1) (Fun b -> 0) (Fun c -> c + 1)"
+  , fbCond)) ;;
 ==> 4
 - : unit = ()
 # ppeval (Appl(parse
-  "Fun fblt -> fblt 0 (Fun a -> 1) (Fun b -> 0) (Fun c -> c + 1)"
-  , fblt)) ;;
+  "Fun fbCond -> fbCond 0 (Fun a -> 1) (Fun b -> 0) (Fun c -> c + 1)"
+  , fbCond)) ;;
 ==> 0
 - : unit = ()
 *)
@@ -150,10 +195,17 @@ let fbCond = parse "" ;; (* ANSWER *)
 *)
 
 (* Write a Fb function to convert a church encoded value to an Fb native integer.*)
-let fbUnChurch = parse "" ;; (* ANSWER *)
+let fbUnChurch = parse "Function church -> church (Function n -> n + 1) 0" ;; (* ANSWER *)
 
 (* Write a Fb function to convert an Fb native integer to a Church encoded value *)
-let fbChurch = parse "" ;; (* ANSWER *)
+let fbChurch = Function(Ident("n"), 
+                 Function(Ident("f"), 
+                   Function(Ident("x"), 
+                     Appl(Appl(combY, parse "Function this -> Function n -> 
+                     If n = 0 Then x Else f (this (n-1))"), Var(Ident("n")))
+                   )
+                 )
+               ) ;; (* ANSWER *)
 
 (*
 # let church2 = parse "Function f -> Function x -> f (f x)";;
@@ -161,10 +213,10 @@ val church2 : Fbast.expr =
   Function (Ident "f",
    Function (Ident "x",
     Appl (Var (Ident "f"), Appl (Var (Ident "f"), Var (Ident "x")))))
-# ppeval (Appl(fbUnchurch,church2));;
+# ppeval (Appl(fbUnChurch,church2));;
 ==> 2
 - : unit = ()
-# ppeval (Appl(fbUnchurch,Appl(fbChurch,Int(12))));;
+# ppeval (Appl(fbUnChurch,Appl(fbChurch,Int(12))));;
 ==> 12
 - : unit = ()
 # ppeval (Appl(Appl(Appl(fbChurch,Int(4)),(parse "Function n -> n + n")),Int(3)));;
@@ -176,18 +228,18 @@ val church2 : Fbast.expr =
    and then fbChurch the result *)
 
 (* Write a function to add two church encoded values *)
-let fbChurchAdd = parse "" ;; (* ANSWER *)
+let fbChurchAdd = parse "Function a -> Function b -> Function f -> Function x -> a f (b f x)" ;; (* ANSWER *)
 
 (* Write a function to multiply two church encoded values *)
-let fbChurchMul = parse "" ;; (* ANSWER *)
+let fbChurchMul = parse "Function a -> Function b -> Function f -> Function x -> a (b f) x" ;; (* ANSWER *)
 
 (*
 # let church2 = parse "Function f -> Function x -> f (f x)" ;;
 # let church3 = parse "Function f -> Function x -> f (f (f x))" ;;
-# ppeval (Appl(fbUnchurch, (Appl(Appl(fbChurchAdd, church3), church2))));;
+# ppeval (Appl(fbUnChurch, (Appl(Appl(fbChurchAdd, church3), church2))));;
 ==> 5
 - : unit = ()a
-# ppeval (Appl(fbUnchurch, (Appl(Appl(fbChurchMult, church3), church2))));;
+# ppeval (Appl(fbUnChurch, (Appl(Appl(fbChurchMul, church3), church2))));;
 ==> 6
 - : unit = ()
 *)
