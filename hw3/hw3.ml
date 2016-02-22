@@ -314,7 +314,7 @@ let fbScottAdd = Appl(parse "Function f -> Function a -> Function b -> a (f b) b
                    Appl(combY, parse "Function this -> Function b -> Function f -> Function s -> Function z -> s (f (this b) b)")) ;; (* ANSWER *)
 
 (* Write a function to multiply two church encoded values *)
-let fbScottMul = Appl(Appl(parse "Function f -> Function add -> Function a -> Function b -> a (f add (Fun s -> Fun z -> z) b) (Fun s -> Fun z -> z)", 
+let fbScottMul = Appl(Appl(parse "Function f -> Function add -> Function a -> Function b -> a (f add (Function s -> Function z -> z) b) (Function s -> Function z -> z)", 
                    Appl(combY, parse "Function this -> Function add -> Function acc -> Function b -> Function f -> f (this add (add acc b) b) (add acc b)")), fbScottAdd) ;; (* ANSWER *)
 
 (*
