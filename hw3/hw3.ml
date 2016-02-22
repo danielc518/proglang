@@ -264,19 +264,69 @@ let fbChurchMul = parse "Function a -> Function b -> Function f -> Function x ->
 *)
 
 (* Write a Fb function to convert a Scott encoded value to an Fb native integer.*)
-let fbUnScott = parse "" ;; (* ANSWER *)
+let fbUnScott = Appl(parse "Function f -> Function scott -> scott f 0", Appl(combY, parse "Function this -> Function f -> 1 + (f this 0)")) ;; (* ANSWER *)
 
 (* Write a Fb function to convert an Fb native integer to a Scott encoded value *)
-let fbScott = parse "" ;; (* ANSWER *)
+let fbScott = Function(Ident("n"), Appl(Appl(combY, parse "Function this -> Function n -> Function s -> Function z ->
+                     If n = 0 Then z Else s (this (n-1))"), Var(Ident("n")))) ;; (* ANSWER *)
+
+(*
+# let scott2 = parse "Function s -> Function z -> s (Function s -> Function z -> s (Function s -> Function z -> z))";;
+val scott2 : Fbast.expr =
+  Function (Ident "s",
+   Function (Ident "z",
+    Appl (Var (Ident "s"),
+     Function (Ident "s",
+      Function (Ident "z",
+       Appl (Var (Ident "s"),
+        Function (Ident "s", Function (Ident "z", Var (Ident "z")))))))))
+# ppeval (Appl(fbUnScott,scott2));;
+==> 2
+- : unit = ()
+# let scott1 = parse "Function s -> Function z -> s (Function s -> Function z -> z)";;
+val scott1 : Fbast.expr =
+  Function (Ident "s",
+   Function (Ident "z",
+    Appl (Var (Ident "s"),
+     Function (Ident "s", Function (Ident "z", Var (Ident "z"))))))
+# ppeval (Appl(fbUnScott,scott1));;
+==> 1
+- : unit = ()
+# let scott0 = parse "Function s -> Function z -> z";;
+val scott0 : Fbast.expr =
+  Function (Ident "s", Function (Ident "z", Var (Ident "z")))
+# ppeval (Appl(fbUnScott,scott0));;
+==> 0
+- : unit = ()
+# ppeval (Appl(fbUnScott,Appl(fbScott,Int(12))));;
+==> 12
+- : unit = ()
+# ppeval (Appl(fbUnScott,Appl(fbScott,Int(48))));;
+==> 48
+- : unit = ()
+*)
 
 (* For these three functions, you are not allowed to call fbUnScott, do the math,
    and then fbScott the result *)
 
 (* Write a function to add two church encoded values *)
-let fbScottAdd = parse "" ;; (* ANSWER *)
+let fbScottAdd = Appl(parse "Function f -> Function a -> Function b -> a (f b) b", 
+                   Appl(combY, parse "Function this -> Function b -> Function f -> Function s -> Function z -> s (f (this b) b)")) ;; (* ANSWER *)
 
 (* Write a function to multiply two church encoded values *)
-let fbScottMul = parse "" ;; (* ANSWER *)
+let fbScottMul = Appl(Appl(parse "Function f -> Function add -> Function a -> Function b -> a (f add (Fun s -> Fun z -> z) b) (Fun s -> Fun z -> z)", 
+                   Appl(combY, parse "Function this -> Function add -> Function acc -> Function b -> Function f -> f (this add (add acc b) b) (add acc b)")), fbScottAdd) ;; (* ANSWER *)
+
+(*
+# let scott2 = parse "Function s -> Function z -> s (Function s -> Function z -> s (Function s -> Function z -> z))";;
+# let scott3 = parse "Function s -> Function z -> s (Function s -> Function z -> s (Function s -> Function z -> s (Function s -> Function z -> z)))";;
+# ppeval (Appl(fbUnScott, (Appl(Appl(fbScottAdd, scott3), scott2))));;
+==> 5
+- : unit = ()a
+# ppeval (Appl(fbUnScott, (Appl(Appl(fbScottMul, scott3), scott2))));;
+==> 6
+- : unit = ()
+*)
 
 (* Write the predecessor function. *)
 
@@ -284,7 +334,8 @@ let fbPred = parse "Fun x -> If x = 0 Then 0 Else x - 1"
 
 (* The Church encoding of predecessor is hard; the Scott encoding is relatively
    straightforward. *)
-let fbScottPred = parse "" ;; (* ANSWER *)
+let fbScottPred = Appl(parse "Function f -> Function scott -> Function s -> Function z -> scott (f s z) z", 
+                   parse "Function s -> Function z -> Function f -> f s z") ;; (* ANSWER *)
 
 
 (*
