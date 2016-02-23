@@ -80,6 +80,23 @@ Part 2.
 
 (*
 
+(If True Rule)
+
+e1 => True, e2 = v2
+------------------------------------------------
+If e1 Then e2 (ElseIf e3 Then e4)* Else e5 => v2
+
+(If False ElseIf True Rule)
+
+e1 => False, e3 = True, e4 => v4
+------------------------------------------------
+If e1 Then e2 (ElseIf e3 Then e4)* Else e5 => v4
+
+(If False ElseIf False Rule)
+
+e1 => False, e3 = False, e5 => v5
+------------------------------------------------
+If e1 Then e2 (ElseIf e3 Then e4)* Else e5 => v5
 
 *)
 
@@ -92,9 +109,13 @@ Part 2.
 
 (*
 
-e2[e1/x] => v
+Function x -> e => v
+----------------------
+Freeze e => v
+
+e1 => Function x -> e, e => v
 -----------------------------
-Let x = Freeze e1 In e2 => v
+Thaw e1 => v
 
 *)
 
@@ -343,9 +364,32 @@ let fbScottPred = Appl(parse "Function f -> Function scott -> Function s -> Func
       convert between *OCaml* lists and encoded Fb lists.
 *)
 
+let pair = parse "Function x -> Function y -> Function z -> z x y" ;;
+let first = parse "Function p -> p (Function x -> Function y -> x)" ;;
+let second = parse "Function p -> p (Function x -> Function y -> y)" ;;
+let nil = Appl(Appl(pair, Bool true), Bool true) ;;
+let cons = Appl(Appl(parse "Function pair -> Function isnil -> Function h -> Function t -> pair isnil (pair h t)", pair), Bool false) ;;
+let head = Appl(Appl(parse "Function first -> Function second -> Function z -> first (second z)", first), second) ;;
+let tail = Appl(parse "Function second -> Function z -> second (second z)", second) ;;
+
 (* Produce an Fb encoded list given an OCaml list. The elements of the OCaml
    list are Fb values *)
-let fbList ocaml_list_of_Fb_expressions = parse "" ;; (* ANSWER *)
+let fbList ocaml_list_of_Fb_expressions = 
+	let rec iterate ocaml_list fb_list =
+		match ocaml_list with
+		| [] -> fb_list
+		| x :: xs -> iterate xs (Appl(Appl(cons, x), fb_list)) 
+	in iterate ocaml_list_of_Fb_expressions nil;; (* ANSWER *)
 
 (* Produce an OCaml list of Fb values given an Fb encoded list. *)
-let fbUnList encoded_Fb_list = parse "" ;; (* ANSWER *)
+let fbUnList encoded_Fb_list = 
+	let rec iterate fb_list ocaml_list = 
+		if (Bool false) = (eval (Appl(first, fb_list))) 
+		  then iterate (Appl(tail, fb_list)) ((eval (Appl(head, fb_list))) :: ocaml_list)
+		else ocaml_list
+	in iterate encoded_Fb_list [];; (* ANSWER *)
+	
+(*
+fbUnList (fbList [Int 1; Int 2; Int 3; Int 4; Int 5]);;
+- : Fbast.expr list = [Int 1; Int 2; Int 3; Int 4; Int 5]
+*)
