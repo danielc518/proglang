@@ -19,7 +19,7 @@
 
   Name                  : Sanghyun Choi
   List of team Members  : N/A
-  List of discussants   : N/A
+  List of discussants   : Alex Rozenshteyn
 
 *)
 
@@ -80,23 +80,41 @@ Part 2.
 
 (*
 
-(If True Rule)
+(If True Rule #1)
 
-e1 => True, e2 = v2
+e1 => True, e2 => v2
+----------------------------
+If e1 Then e2 Else e3 => v2
+
+(If False Rule)
+
+e1 => False, e3 => v3
+----------------------------
+If e1 Then e2 Else e3 => v3
+
+(If True Rule #2)
+'+' symbol denotes 'one or more times'
+
+e1 => True, e2 => v2
 ------------------------------------------------
-If e1 Then e2 (ElseIf e3 Then e4)* Else e5 => v2
+If e1 Then e2 (ElseIf e3 Then e4)+ Else e5 => v2
 
 (If False ElseIf True Rule)
+'+' symbol denotes 'one or more times'
 
-e1 => False, e3 = True, e4 => v4
-------------------------------------------------
-If e1 Then e2 (ElseIf e3 Then e4)* Else e5 => v4
+e1 => False, e3 = True where e3 is from the FIRST instance of 'ElseIf' 
+expression from the given list of 'ElseIf' expressions for which e3 is True, 
+e4 => v4 where e4 is from the 'Then' expression after such particular e3 for
+which e3 is evaluated to True
+-----------------------------------------------------------------------------
+If e1 Then e2 (ElseIf e3 Then e4)+ Else e5 => v4
 
 (If False ElseIf False Rule)
+'+' symbol denotes 'one or more times'
 
-e1 => False, e3 = False, e5 => v5
-------------------------------------------------
-If e1 Then e2 (ElseIf e3 Then e4)* Else e5 => v5
+e1 => False, e3 = False for ALL 'ElseIf' expressions, e5 => v5
+--------------------------------------------------------------
+If e1 Then e2 (ElseIf e3 Then e4)+ Else e5 => v5
 
 *)
 
@@ -109,12 +127,15 @@ If e1 Then e2 (ElseIf e3 Then e4)* Else e5 => v5
 
 (*
 
-Function x -> e => v
-----------------------
-Freeze e => v
+Add the following values and expressions:
+v ::= Frozen e
+e ::= Freeze e | Thaw e
 
-e1 => Function x -> e, e => v
------------------------------
+---------------------
+Freeze e => Frozen e
+
+e1 => Frozen e2, e2 => v
+------------------------
 Thaw e1 => v
 
 *)
@@ -372,8 +393,23 @@ let cons = Appl(Appl(parse "Function pair -> Function isnil -> Function h -> Fun
 let head = Appl(Appl(parse "Function first -> Function second -> Function z -> first (second z)", first), second) ;;
 let tail = Appl(parse "Function second -> Function z -> second (second z)", second) ;;
 
-(* Produce an Fb encoded list given an OCaml list. The elements of the OCaml
-   list are Fb values *)
+(* Produce an expression that evaluates to an Fb encoded list given an OCaml
+   list. The elements of the OCaml list are Fb expressions, but your list
+   should contain only values.
+   
+   Note: there are two primary ways to do this:
+       1. Have your OCaml code evaluate the expressions before putting them in
+          the Fb AST (or string which you will parse to an AST).
+       2. Leave the expressions as expressions in the Fb code, relying on the
+          interpreter to evaluate them; if you do this, make sure they do get
+          evaluated.
+
+   Running `eval (fbList [parse "1", parse "1 + True"])` should result in an Fb
+   runtime error. If it does not, you are not evaluating the expressions.
+
+   If you are taking the first approach, you should produce Fb code which will
+   have a runtime error in this case.
+*)
 let fbList ocaml_list_of_Fb_expressions = 
 	let rec iterate ocaml_list fb_list =
 		match ocaml_list with
@@ -381,7 +417,24 @@ let fbList ocaml_list_of_Fb_expressions =
 		| x :: xs -> iterate xs (Appl(Appl(cons, x), fb_list)) 
 	in iterate ocaml_list_of_Fb_expressions nil;; (* ANSWER *)
 
-(* Produce an OCaml list of Fb values given an Fb encoded list. *)
+(* Produce an OCaml list of Fb values given an an expression which evaluates to
+   an Fb encoded list, possibly containing expressions. You will need to call
+   `eval` in this function.
+   
+   Throw an exception if you encounter an Fb error, or if the Fb expression
+   does not evalute to an Fb list.
+
+   `fun x -> let y = fbUnList x in map eval y = y` should be true for any input
+   unless an exception is thrown.
+
+   Again, there are two primary ways to do this:
+       1. Have OCaml evaluate the expression and pull it apart, evaluating the
+          components as necessary.
+       2. Write an Fb function which takes a list and evaluates each element of
+          it, constructing a new list of values; then use eval once to call
+          this function on your input before using OCaml to pull apart your Fb
+          encoded list, secure in the knowledge that its elements are values.
+*)
 let fbUnList encoded_Fb_list = 
 	let rec iterate fb_list ocaml_list = 
 		if (Bool false) = (eval (Appl(first, fb_list))) 
