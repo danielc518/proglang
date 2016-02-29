@@ -80,41 +80,40 @@ Part 2.
 
 (*
 
-(If True Rule #1)
+-- In addition to existing Fb types, introduce a new type 'elif':
+
+type elif = Else of expr | ElseIf of expr * expr * elif
+
+-- Modify the existing Fb expression for 'If' as follows:
+
+type expr = ... | If of expr * expr * elif | ...
+
+-- Modify existing Fb 'If-Else' rules as follows:
+-- (Let 'l' denote the meta-variable for 'elif' type defined above)
+
+('elif' Type Rules)
+
+e => v
+-----------
+Else e => v
 
 e1 => True, e2 => v2
-----------------------------
-If e1 Then e2 Else e3 => v2
+-------------------------
+ElseIf e1 Then e2 l => v2
 
-(If False Rule)
+e1 => False, l => v3
+-------------------------
+ElseIf e1 Then e2 l => v3
 
-e1 => False, e3 => v3
-----------------------------
-If e1 Then e2 Else e3 => v3
-
-(If True Rule #2)
-'+' symbol denotes 'one or more times'
+(If-Else Rules)
 
 e1 => True, e2 => v2
-------------------------------------------------
-If e1 Then e2 (ElseIf e3 Then e4)+ Else e5 => v2
+---------------------
+If e1 Then e2 l => v2
 
-(If False ElseIf True Rule)
-'+' symbol denotes 'one or more times'
-
-e1 => False, e3 = True where e3 is from the FIRST instance of 'ElseIf' 
-expression from the given list of 'ElseIf' expressions for which e3 is True, 
-e4 => v4 where e4 is from the 'Then' expression after such particular e3 for
-which e3 is evaluated to True
------------------------------------------------------------------------------
-If e1 Then e2 (ElseIf e3 Then e4)+ Else e5 => v4
-
-(If False ElseIf False Rule)
-'+' symbol denotes 'one or more times'
-
-e1 => False, e3 = False for ALL 'ElseIf' expressions, e5 => v5
---------------------------------------------------------------
-If e1 Then e2 (ElseIf e3 Then e4)+ Else e5 => v5
+e1 => False, l => v3
+---------------------
+If e1 Then e2 l => v3
 
 *)
 
@@ -128,10 +127,10 @@ If e1 Then e2 (ElseIf e3 Then e4)+ Else e5 => v5
 (*
 
 Add the following values and expressions:
-v ::= Frozen e
-e ::= Freeze e | Thaw e
+v ::= ... | Frozen e
+e ::= ... | Freeze e | Thaw e
 
----------------------
+--------------------
 Freeze e => Frozen e
 
 e1 => Frozen e2, e2 => v
@@ -404,7 +403,7 @@ let tail = Appl(parse "Function second -> Function z -> second (second z)", seco
           interpreter to evaluate them; if you do this, make sure they do get
           evaluated.
 
-   Running `eval (fbList [parse "1", parse "1 + True"])` should result in an Fb
+   Running `eval (fbList [parse "1"; parse "1 + True"])` should result in an Fb
    runtime error. If it does not, you are not evaluating the expressions.
 
    If you are taking the first approach, you should produce Fb code which will
