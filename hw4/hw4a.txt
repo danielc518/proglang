@@ -1,0 +1,96 @@
+600.426 - Programming Languages
+JHU Spring 2016
+Homework 4 Part A (30 points)
+
+--------------------------------------------------------------------------------------------------
+HEADER: PLEASE FILL THIS IN
+--------------------------------------------------------------------------------------------------
+
+Name                  : Sanghyun Choi
+List of team Members  :
+List of discussants   :
+
+--------------------------------------------------------------------------------------------------
+   Variants
+--------------------------------------------------------------------------------------------------
+
+
+1. We observed in lecture that the FbV Match operational semantics rule was not completely accurate: if two clauses matched it would not pick the first one like it should.  For example, 
+
+Match `Some(3 - 7) With `Some(x) -> 0 | `Some(x) -> 1 ==> 1
+
+could be proved.
+
+a. For a warm-up, write a full proof tree concluding in the above.  The proof rules for FbV are on page 56 of the book.
+
+3 - 7 => 'Some(-4), 1[-4/x] => 1 
+------------------------------------------------------
+Match `Some(3 - 7) With `Some(x) -> 0 | `Some(x) -> 1 ==> 1
+
+b. Prove that ==> for FbV as defined in the book is nondeterministic (the definition of deterministic is in the book, and nondeterministic is its negation).
+
+Note that the following is equally true in addition to the result of part (a):
+
+3 - 7 => 'Some(-4), 0[-4/x] => 0
+------------------------------------------------------
+Match `Some(3 - 7) With `Some(x) -> 0 | `Some(x) -> 1 ==> 0
+
+From the result of part (a) and the result above, and denoting "Match `Some(3 - 7) With `Some(x) -> 0 | `Some(x) -> 1" as 'e',
+it follows that e => 1 and e => 0. However, the value 1 is not equal to 0. So the condition for deterministic language
+(i.e. if e => v and e => v', then v = v') does not hold. Therefore, FbV as defined in the book is nondeterministic.
+
+c. Fix the rule to pick the first clause only.  Remember the rules are mathematical definitions and any side-conditions necessary can be added.
+
+e => n_j(v_j) where j = min{i | e => n_i(v_i)}, e_j[v_j/x_j] => v
+----------------------------------------------------------------------
+Match e with n_1(x_1) -> e_1 | ... | n_j(x_j) -> e_j | n_m(x_m) -> e_m
+
+
+[10 points]
+
+--------------------------------------------------------------------------------------------------
+  State and Recursion
+--------------------------------------------------------------------------------------------------
+
+2. Section 4.1.2 discusses cyclical stores.  We did not cover that topic in lecture so you probably want to quickly review that section now.  The main example is
+
+Let y = Ref 0 In
+Let _ = y := (Function x -> If x = 0 Then 0 Else x + (!y)(x-1))
+In (!y)(10);;
+
+Which is an Fb program computing 1+...+10 *without* any self-passing.  But, it still has self-reference, the contents of the cell y refer to y itself.  You can run this program in the FbSR interpreter we supply in the binary distribution, just type "ocamlrun fbsr.byte" and paste in the above (note the example in the book was not exactly in the FbSR syntax but the above is and you can run it; FbSR has Let along with records and state).
+
+
+a. If we changed the 10 above to -10 (well,. 0-10 in our cheesy parser) we would get a diverging program, it would never hit the base case (try it in the FbSR interpreter if you are not believing).  For this question write a reallly small program which captures the essence of this divergence - the conditional and base case for example are not needed.  Simplify out everything you can but run it to make sure it still diverges.
+
+Let y = Ref 0 In
+Let _ = y := (Function x -> x + (!y)(x))
+In (!y)(0);;
+
+b. You want to make your answer to 2a as short as you can, because for this question you are to write out the FbS operational semantics *proof tree* which shows your program in 2a will run forever.  Your answer should use the proof rules for FbS in the book Section 4.1.1.  Some example FbS proofs are given in Examples 4.1 and 4.2.  Your proof tree will never finish, similarly to (Fun x -> x x)(Fun x -> x x) -- just get it to the point where its obvious it will not finish.  Note that FbS has no Let syntax in it, so as your first step convert your answer to 3a into a Let-free form using the macro definition of Let in the book.  Values that compute to themselves you can leave out of your tree for simplicity if you want.
+
+
+                                                                                                                                             <(!c1)(0), {c1->(Function x -> x + (!c1)(x))}> => <0 + 0 + (!c1)(0), {c1->(Function x -> x + (!c1)(x))}> 
+                                                                                                                                             ----------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                             <(Function x -> x + (!c1)(x))(0), {c1->(Function x -> x + (!c1)(x))}> => <0 + (!c1)(0), {c1->(Function x -> x + (!c1)(x))}>
+                                                                                                                                             ----------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                             <(!c1)(0), {c1->(Function x -> x + (!c1)(x))}> => <0 + (!c1)(0), {c1->(Function x -> x + (!c1)(x))}> 
+                                                                                                                                             ----------------------------------------------------------------------------------------------------------------------------
+                              <y := (Function x -> x + (!y)(x)), {c1->0}> => <Function x -> x + (!y)(x), {c1->(Function x -> x + (!y)(x))}>, <(Function _ -> (!y)(0))[c1/y], {c1->(Function x -> x + (!c1)(x))}> => <0 + (!c1)(0), {c1->(Function x -> x + (!c1)(x))}>
+                              -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+<Ref 0, {}> => <c1, {c1->0}>, <((Function _ -> (!y)(0)) y := (Function x -> x + (!y)(x)))[c1/y], {c1->0}> => <0 + (!c1)(0), {c1->(Function x -> x + (!c1)(x))}>
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+<(Function y -> ((Function _ -> (!y)(0)) y := (Function x -> x + (!y)(x)))) (Ref 0), {}> => ...
+
+c. Now, going back to the example above, use it as inspiration to make a new form of Y combinator ysComb which is a stateful Y combinator.  The test case is the same as yComb:
+
+Let ysComb = (* fill in your stateful Y which is the parameterized version of the above summate example *)
+In ysComb (Function self -> Function x -> If x = 0 Then 0 Else x + self (x-1)) 5
+
+should return 15.
+
+Hint: like we did in lecture, turn the summate code block into a parameter you pass in as a function; make any variables in the summate code block be parameters to this function.
+
+You are not allowed to use any function self passing ("x x" kind of thing), all the self-reference must be through the heap to get credit for the problem. 
+
+[20 points]
