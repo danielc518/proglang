@@ -64,27 +64,27 @@ Which is an Fb program computing 1+...+10 *without* any self-passing.  But, it s
 a. If we changed the 10 above to -10 (well,. 0-10 in our cheesy parser) we would get a diverging program, it would never hit the base case (try it in the FbSR interpreter if you are not believing).  For this question write a reallly small program which captures the essence of this divergence - the conditional and base case for example are not needed.  Simplify out everything you can but run it to make sure it still diverges.
 
 Let y = Ref 0 In
-Let _ = y := (Function x -> x + (!y)(x))
+Let _ = y := (Function x -> (!y)(x))
 In (!y)(0);;
 
 b. You want to make your answer to 2a as short as you can, because for this question you are to write out the FbS operational semantics *proof tree* which shows your program in 2a will run forever.  Your answer should use the proof rules for FbS in the book Section 4.1.1.  Some example FbS proofs are given in Examples 4.1 and 4.2.  Your proof tree will never finish, similarly to (Fun x -> x x)(Fun x -> x x) -- just get it to the point where its obvious it will not finish.  Note that FbS has no Let syntax in it, so as your first step convert your answer to 3a into a Let-free form using the macro definition of Let in the book.  Values that compute to themselves you can leave out of your tree for simplicity if you want.
 
 
-                                                                                                                                             <(!c1)(0), {c1->(Function x -> x + (!c1)(x))}> => <0 + 0 + (!c1)(0), {c1->(Function x -> x + (!c1)(x))}> 
-                                                                                                                                             ----------------------------------------------------------------------------------------------------------------------------
-                                                                                                                                             <(Function x -> x + (!c1)(x))(0), {c1->(Function x -> x + (!c1)(x))}> => <0 + (!c1)(0), {c1->(Function x -> x + (!c1)(x))}>
-                                                                                                                                             ----------------------------------------------------------------------------------------------------------------------------
-                                                                                                                                             <(!c1)(0), {c1->(Function x -> x + (!c1)(x))}> => <0 + (!c1)(0), {c1->(Function x -> x + (!c1)(x))}> 
-                                                                                                                                             ----------------------------------------------------------------------------------------------------------------------------
-                              <y := (Function x -> x + (!y)(x)), {c1->0}> => <Function x -> x + (!y)(x), {c1->(Function x -> x + (!y)(x))}>, <(Function _ -> (!y)(0))[c1/y], {c1->(Function x -> x + (!c1)(x))}> => <0 + (!c1)(0), {c1->(Function x -> x + (!c1)(x))}>
-                              -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-<Ref 0, {}> => <c1, {c1->0}>, <((Function _ -> (!y)(0)) y := (Function x -> x + (!y)(x)))[c1/y], {c1->0}> => <0 + (!c1)(0), {c1->(Function x -> x + (!c1)(x))}>
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-<(Function y -> ((Function _ -> (!y)(0)) y := (Function x -> x + (!y)(x)))) (Ref 0), {}> => ...
+                                                                                                                                             ... and so on...
+                                                                                                                                             ------------------------------------------------------------------------------------------------------------
+                                                                                                                                             <(Function x -> (!c1)(x))(0), {c1->(Function x -> (!c1)(x))}> => <(!c1)(0), {c1->(Function x -> (!c1)(x))}>
+                                                                                                                                             ------------------------------------------------------------------------------------------------------------
+                                                                                                                                             <(!c1)(0), {c1->(Function x -> (!c1)(x))}> => <(Function x -> (!c1)(x))(0), {c1->(Function x -> (!c1)(x))}>
+                                                                                                                                             ------------------------------------------------------------------------------------------------------------
+                              <y := (Function x -> (!y)(x)), {c1->0}> => <Function x -> (!y)(x), {c1->(Function x -> (!y)(x))}>, <(Function _ -> (!y)(0))[c1/y], {c1->(Function x -> (!c1)(x))}> => <(!c1)(0), {c1->(Function x -> (!c1)(x))}>
+                              ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+<Ref 0, {}> => <c1, {c1->0}>, <((Function _ -> (!y)(0)) y := (Function x -> (!y)(x)))[c1/y], {c1->0}> => <(!c1)(0), {c1->(Function x -> (!c1)(x))}>
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+<(Function y -> ((Function _ -> (!y)(0)) y := (Function x -> (!y)(x)))) (Ref 0), {}> => DIVERGES!
 
 c. Now, going back to the example above, use it as inspiration to make a new form of Y combinator ysComb which is a stateful Y combinator.  The test case is the same as yComb:
 
-Let ysComb = (* fill in your stateful Y which is the parameterized version of the above summate example *)
+Let ysComb = Function b -> Function x -> (Let y = Ref 0 In Let _ = y := (Function x -> b (!y) x) In (!y)(x))
 In ysComb (Function self -> Function x -> If x = 0 Then 0 Else x + self (x-1)) 5
 
 should return 15.
