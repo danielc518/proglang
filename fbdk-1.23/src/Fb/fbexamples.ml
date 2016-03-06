@@ -69,7 +69,7 @@ let combS = parse "Function x -> Function y -> Function z -> (x z) (y z)";;
 let combD = parse "Function x -> x x";;
 
 
-(* Tuples *)
+(* Pair macros defined as OCaml functions over ASTs *)
 
 let pr (e1,e2) = Appl(Appl(parse "(Function lft -> Function rgt -> Function x -> x lft rgt)",e1),e2);;
 
@@ -80,17 +80,38 @@ let p = pr(Int 4, Int 5);;
 
 let ex2dot3dot4 = left p;;
 
-(* Lists *)
+let p = pr(Int 4, Int 5);;
+
+(* Pair macros over strings *)
+
+let pair c1 c2  = "((Function lft -> Function rgt -> Function x -> x lft rgt) ("^c1^") ("^c2^"))";;
+
+let leftc c =  "("^c^") (Function x -> Function y -> x)";;
+let rightc c =  "("^c^") (Function x -> Function y -> y)";;
+
+let pc = pair "34" "45";;  
+
+let prceg = leftc pc;;
+  
+(* Lists (using AST macros) *)
 let cons (e1, e2) = pr(pr(Bool false, e1), e2)
 let emptylist = pr(pr(Bool true, Int 0),Int 0)
 let head e = right (left e)
 let tail e = right e
 let isempty e = (left (left e))
-let length = Letrec (Ident "len", Ident "x",
+let length = LetRec (Ident "len", Ident "x",
    If (isempty (Var (Ident "x")), Int 0,
     Plus (Int 1,
      Appl (Var (Ident "len"), tail(Var (Ident "x"))))),
    Var (Ident "len"))
+(* length pretty prints as 
+Let Rec len x = 
+ If ((x) (Function x -> Function y -> x)) 
+    (Function x -> Function y -> x) Then  0
+ Else
+  1 + (len) ((x) (Function x -> Function y -> y))
+In
+ len *)
 
 let eglist = cons(Int 0,cons(Int 4,cons(Int 2,emptylist)));;
 let eghd = head eglist;;
@@ -102,7 +123,46 @@ let eglength = Appl(length,eglist);;
 let freeze e = Function(Ident"x", e);;
 let thaw e = Appl(e,Int 0);;
 
-(* Recursion *)
+(* Recursion via self passing (using string macros) *)
+
+(* First, the paradox *)
+  
+let paradox = "(Function x -> Not(x x))(Function x -> Not(x x))" ;;
+
+(* Next, freeze the "x x" so it doesn't chain forever 
+   and repace Not with a macro parameter -- something we can plug in *)
+  
+let makeFroFs cF = "(Function x -> ("^cF^")(Function _ -> x x)) (Function x -> ("^cF^")(Function _ -> x x))";;
+
+(* Observe cF is getting a parameter which is a frozen version of the cF generator *)  
+  
+(* A concrete functional we can plug in to do recursion *)                                                                                       
+let fF = "Function froFs -> Function n ->
+If n = 0 Then 0 Else n + froFs 33 (n - 1)";;
+
+let fCall = "("^(makeFroFs fF)^") 5";; (* look ma, no Let Rec! *)
+
+(* The hard stuff is done, now we just clean things up *)
+  
+(* replace dummy parameter _ with actual argument: pun *)
+   
+let makeFs cF = "(Function x -> ("^cF^")(Function n -> (x x) n)) (Function x -> ("^cF^")(Function n -> (x x) n))"
+
+let fF' = "Function fs -> Function n ->
+If n = 0 Then 0 Else n + fs (n - 1)";;
+
+let fCall' = "("^(makeFs fF')^") 5";;
+
+(* replace macro with a function call - embed the macro in PL *)  
+  
+let yY = "Function cF -> (Function x -> cF (Function n -> (x x) n)) (Function x -> cF (Function n -> (x x) n))"
+
+let yEg = "("^yY^")("^fF'^")";;
+
+let fCall'' = "("^yEg^") 5";;
+  
+(* Recursion via direct self-passing  (using AST macros) *)
+  
 let summate0 = parse "Function this -> Function arg ->
     If arg = 0 Then 0 Else arg + this this (arg - 1)";;
 
