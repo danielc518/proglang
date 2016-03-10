@@ -80,40 +80,31 @@ Part 2.
 
 (*
 
--- In addition to existing Fb types, introduce a new type 'elif':
+Define "c" to be a new non-terminal
 
-type elif = Else of expr | ElseIf of expr * expr * elif
+c ::= ElseIf e Then e | ε
 
--- Modify the existing Fb expression for 'If' as follows:
+e ::= ... | If e Then e c Else e End
 
-type expr = ... | If of expr * expr * elif | ...
+(Note: "c" is not an expression, ε is a symbol meaning "empty string")
 
--- Modify existing Fb 'If-Else' rules as follows:
--- (Let 'l' denote the meta-variable for 'elif' type defined above)
+If-Then:
 
-('elif' Type Rules)
+e1 => True    e2 => v2
+---------------------------------
+If e1 Then e2 c Else e3 End => v2
 
-e => v
------------
-Else e => v
+If-Else:
 
-e1 => True, e2 => v2
--------------------------
-ElseIf e1 Then e2 l => v2
+e1 => False    e3 => v3
+---------------------------------
+If e1 Then e2 Else e3 End => v3
 
-e1 => False, l => v3
--------------------------
-ElseIf e1 Then e2 l => v3
+If-ElseIf:
 
-(If-Else Rules)
-
-e1 => True, e2 => v2
----------------------
-If e1 Then e2 l => v2
-
-e1 => False, l => v3
----------------------
-If e1 Then e2 l => v3
+e1 => False    c = ElseIf e4 Then e5 c'    If e4 Then e5 c' Else e3 End => v
+----------------------------------------------------------------------------
+If e1 Then e2 c Else e3 End => v
 
 *)
 
