@@ -23,7 +23,7 @@ could be proved.
 
 a. For a warm-up, write a full proof tree concluding in the above.  The proof rules for FbV are on page 56 of the book.
 
-3 - 7 => 'Some(-4), 1[-4/x] => 1 
+'Some(3 - 7) => 'Some(-4), 1[-4/x] => 1 
 -----------------------------------------------------------
 Match `Some(3 - 7) With `Some(x) -> 0 | `Some(x) -> 1 ==> 1
 
@@ -31,7 +31,7 @@ b. Prove that ==> for FbV as defined in the book is nondeterministic (the defini
 
 Note that the following is equally true in addition to the result of part (a):
 
-3 - 7 => 'Some(-4), 0[-4/x] => 0
+'Some(3 - 7) => 'Some(-4), 0[-4/x] => 0
 -----------------------------------------------------------
 Match `Some(3 - 7) With `Some(x) -> 0 | `Some(x) -> 1 ==> 0
 
