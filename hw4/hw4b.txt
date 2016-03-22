@@ -195,4 +195,24 @@ exceptions; we described several rules needed for + in lecture and the book has 
 needed for -.  Think carefully about all the places the program could "blow up" in
 computing a binary operator.
 
+e1 => True, e2 => True
+----------------------
+e1 Implies e2 => True
+
+e1 => True, e2 => False
+-----------------------
+e1 Implies e2 => False
+
+e1 => False
+----------------------
+e1 Implies e2 => True
+
+e1 => Raise #xn v
+-----------------------------
+e1 Implies e2 => Raise #xn v
+
+e1 => True, e2 => Raise #xn v
+-----------------------------
+e1 Implies e2 => Raise #xn v
+
 [15 points]
