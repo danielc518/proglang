@@ -195,24 +195,21 @@ exceptions; we described several rules needed for + in lecture and the book has 
 needed for -.  Think carefully about all the places the program could "blow up" in
 computing a binary operator.
 
-e1 => True, e2 => True
-----------------------
-e1 Implies e2 => True
-
-e1 => True, e2 => False
------------------------
-e1 Implies e2 => False
-
-e1 => False
-----------------------
-e1 Implies e2 => True
-
 e1 => Raise #xn v
 -----------------------------
 e1 Implies e2 => Raise #xn v
 
-e1 => True, e2 => Raise #xn v
------------------------------
+e1 => v1, v1 not a 'Raise', e2 => Raise #xn v
+---------------------------------------------
 e1 Implies e2 => Raise #xn v
+
+e1 => v1, e2 => v2 where v1 and v2 are Boolean variables
+-----------------------------------------------------------------
+e1 Implies e2 => v1 implies v2 ('implies' function defined below)
+
+True implies True => True
+True implies False => False
+False implies True => True
+False implies False => True
 
 [15 points]
