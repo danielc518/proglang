@@ -57,10 +57,9 @@ Section 1: Stateful Semantics
 1b. Write down the operational semantics for the above While expression as an extension to
     FbS.
 
-Add the following expression/value in addition to existing FbS expressions/values:
+Add the following expression/value in addition to existing FbS expressions:
 
 e::= ... | While e: e Else: e
-v::= ... | While e: e Else: e
 
 (While True Rule)
 
