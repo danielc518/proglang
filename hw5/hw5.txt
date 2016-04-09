@@ -1,0 +1,232 @@
+600.426 - Programming Languages
+JHU Spring 2016
+Homework 5
+
+--------------------------------------------------------------------------------------------------
+HEADER: PLEASE FILL THIS IN
+--------------------------------------------------------------------------------------------------
+
+Name                  : Sanghyun Choi
+List of team Members  :
+List of discussants   :
+
+----------------------------------------------------------------------------------------
+  Section 1: Type Rules and Subtyping
+----------------------------------------------------------------------------------------
+
+1a. We defined a language FbD - Fb with extensible dictionaries, in the midterm. In this
+    exercise we extend it to TFbD - FbD with typechecking. Write down the new type rules
+    needed for the language (beyond those already provided by TFb).  Make sure to type the
+    construction as well as the append and access of dictionaries.
+
+    You can assume that the syntax of FbD has been extended to allow the specification
+    of types for dictionaries as  { `Foo => Bool ; `Bar => Int ; `Moo => Int }.
+
+Let G = Gamma (i.e. the map of types)
+
+G |- e1 : t1, G |- e2 : t2, ..., G |- en : tn
+--------------------------------------------------------------------------------
+G |- {l1 => e1; l2 => e2; ... ; ln => en} : {l1 => t1; t2 => t2; ... ; ln => tn}
+
+G |- e : {l1 : t1; l2 : t2; lk : tk; ... ; ln : tn}
+---------------------------------------------------
+                G |- e[lk] : vk
+
+Let {lk1, ..., lkn} be the set of keys that overlap between e and e' (can be empty)
+G |- e : {l1 : t1; l2 : t2; ...; lk1 : tk1; ...; lkn : tkn; ... ; ln : tn}, G |- e' : {l1' : t1'; l2' : t2'; ...; lk1 : tk1'; ...; lkn : tkn'; ... ; ln' : tn'}
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+              G |- e @@ e' : {l1 : t1; l1' : t1'; l2 : t2; l2' : t2'; ...; lk1 : tk1'; ...; lkn : tkn'; ... ; ln : tn; ln' : tn'}
+
+ b. Consider hypothetical language STFbD, adding subtyping to the above.  This is in fact
+    very difficult due to the challenges of subtyping.  To illustrate the problem consider
+    trying to typecheck
+
+     Fun x: { `Foo => Bool } -> Fun y: { `Bar => Int } -> x @@ y
+
+    Write a sentence or two on why the append typing rule would be difficult to write in
+    the presence of subtyping.
+
+If there was no subtyping, we would know for sure that the type of 'x @@ y' would be { `Foo : Bool; `Bar : Int } since no other types are accepted as parameters for x and y.
+However, with subtyping, we can pass { `Foo => Bool; `New => Int } for x and { `Bar => Int; `Foo => Int } for y in which case the type of 'x @@ y' would be { `Foo : Int; `Bar : Int; `New: Int }.
+Notice how the type of `Foo has changed from Bool to Int but since neither Bool or Int is a subtype of each other, this type change is very hard to formalize. 
+Hence the type of 'x @@ y' is very difficult to predict and to formalize as a rule when subtyping is introduced.
+
+ c. Give a type derivation in STFbR showing how the following program typechecks:
+    Let getradius = (Fun p : {r:Int} -> p.r) In
+      getradius {r = 4; t = 180} + getradius {r = 5; t = 120; g=128}
+
+Let G = (getradius : {r:Int} -> Int)
+
+                                                                            G |- 4 : Int    G |- 180 : Int                                                                                                   G |- 5 : Int    G |- 120 : Int    G |- 128 : Int
+                                                                           -------------------------------------------                                                                                       ------------------------------------------------------------
+G |- getradius : {r:Int} -> Int    G |- {r : Int; t : Int} <: {r : Int}     G |- {r = 4; t = 180} : {r : Int; t : Int}    G |- getradius : {r:Int} -> Int    G |- {r : Int; t : Int; g : Int} <: {r : Int}   G |- {r = 5; t = 120; g = 128} : {r : Int; t : Int; g : int}
+----------------------------------------------------------------------------------------------------------------------    ------------------------------------------------------------------------------------------------------------
+G |- getradius {r = 4; t = 180} : Int                                                                                     G |- getradius {r = 5; t = 120; g=128} : Int    
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|- Let getradius = (Fun p : {r:Int} -> p.r) In getradius {r = 4; t = 180} + getradius {r = 5; t = 120; g=128} : Int
+
+    [25 Points]
+
+
+--------------------------------------------------------------------------------------------------
+  Section 2: Actors
+--------------------------------------------------------------------------------------------------
+
+2a. For this question you are going to write a set data structure of sorts in AFbV.
+
+    An implementation of AFbV is available in the FbDK. It is not multithreaded or
+    distributed however as OCaml core libraries don't have such facilities.  Language
+    extensions including Let .. In, sequencing ( ; operator ), pairs ( including keywords
+    Fst and Snd to extract values ), lists ( supports construction via the :: operator and
+    the standard [v1; v2; v3] notation and has keywords Head and Tail to extract the head
+    and tail respectively; use "l = []" to check for empty list) and also an ability to
+    print integers and booleans.  It does not include Let Rec. You can use the Y
+    combinator to get around that and it is easy to do with Let .. In.  If you start the
+    interpreter with the --debug flag, it will print out the current set of actors and
+    messages before it processes messages. This is useful, but may be too much information
+    on screen.  Note that if there is any runtime error you MUST to stop and re-start the
+    intepreter, it is flakey and may not work properly otherwise.
+
+    Some AFbV examples run in class may be found at
+
+    http://pl.cs.jhu.edu/pl/ocaml/code/AFbV-examples.afbv
+
+
+    Here is a sketch of the interface your set should obey.
+
+    Let setbeh = (* FILL IN YOUR SET BEHAVIOR HERE *)  In
+    Let s = Create(setbeh,0) In ...
+
+    so that 
+
+    s <- `add(1); s <- `add(2); s <- `add(3)
+
+    would add all the indicated elements to set s (implemented by an actor).  Then,
+
+    s <- `asList(c)
+
+    should cause s to send all elements of its set, in the form of a list, to
+    actor c.
+
+
+    Overall here is a program which should be able to test your set:
+
+    Let y = (Fun b -> Let w = Fun s -> Fun m -> b (s s) m In w w) In
+    Let setbeh = Fun me -> y (Fun this -> Fun data -> Fun msg ->
+                                                    Match msg With
+                                                        `add(n,c) -> (c <- `ack(0)); (this (n::data))
+                                                        | `asList(c) -> (c <- data); (this data))  In
+    Let testbcont = Fun m -> (Print (Head m)); (Print (Head (Tail m)));
+                             (Print (Head (Tail (Tail m)))); (Fun x -> x) In
+    Let testb = Fun me -> Fun d -> Fun m ->  
+       Let s = Create(setbeh, []) In
+         (s <- `add(1,me)); (Match m With `ack(_) -> (s <- `add(2,me))); (Match m With `ack(_) -> (s <- `add(3,me))); (s <- `asList(me));
+         (testbcont)
+    In Let testa = Create(testb,0)
+    In testa <- `anymessage 0
+
+    Observe that the testbcont is the "continuation" of the test, its the behavior which will receieve the list from the set.
+    
+    [10 points]
+
+ b. One property of actors discussed in class was arrival order nondeterminism, namely
+    messages need not arrive in the order they were sent.  Describe how the above set
+    actor is not the most reliable data structure given this property.
+
+    - The ordering of the elements within the set is not guaranteed.
+    - `asList may arrive first in which case an empty list will be returned even though elements were intended to be added.
+
+ c. Fix the above set and test so that it will serialize the additions appropriately, by changing the protocol for add to be
+
+      s <- `add(1,c)
+
+    and have your set send an `ack(0) reply to c every time it accomplishes an `add.  Also
+    change the test so it waits for the `ack of each `add before sending the next add.
+    You will have to use the testbcont idea in the tester above to sequence messages.
+
+    [40 points]
+
+--------------------------------------------------------------------------------------------------
+  Section 3: Operational Equivalence
+--------------------------------------------------------------------------------------------------
+
+
+3. a. For each of the following Fb expressions, indicate whether operational equivalence
+   holds. If it does not, show some context that evaluates differently dependent upon
+   which of the two expressions you use. (Remember: it only takes one of the infinitely
+   many contexts to make the two expressions operationally inequivalent).
+   
+   1. (Fun y -> Not y) False =~ True 
+
+    Equivalent. The parameter 'y' is bound to be 'False' and since 'Not False' is 'True' it is equivalent to 'True' by beta-equivalence.
+  
+   2. y + x =~ x + y
+
+    Not equivalent. Consider C = (Fun x -> Fun y -> * 0) 1 (Fun z -> z). Then C[y + x] = (Fun x -> Fun y -> y + x 0) 1 (Fun z -> z) fails to evaluate.
+    However, C[x + y] = (Fun x -> Fun y -> x + y 0) 1 (Fun z -> z) = 1 + (Fun z -> z) 0 evaluates to 1.
+
+   3. Fun f -> f 0 + f 1 =~ Fun f -> f 1 + f 0
+
+    Equivalent.
+  
+   4. Let dummy = x y In (0 0) ~= (0 1)
+
+    Equivalent. By lemma 2.7 in the book (i.e. both sides do not evalue to any value).
+
+   5. (Fun x -> x x)(Fun x -> x x) =~ (Fun x -> x x x)(Fun x -> x x x)
+
+    Equivalent. By lemma 2.7.
+
+
+   b. As 3a. but for FbS. Think carefully about what stateful side effects could do.
+
+   1. (Fun y -> Not y) False =~ True 
+
+    Equivalent. There is no place where side effect could occur.
+  
+   2. y + x =~ x + y
+
+    Not equivalent. Already shown in part a.
+
+   3. Fun f -> f 0 + f 1 =~ Fun f -> f 1 + f 0
+
+    Not equivalent. Consider C = (*) (Fun g -> If g = 0 Then (0 0) Else (Ref 7)). Then C[Fun f -> f 0 + f 1] gets stuck while evaluating (0 0) (i.e. f 0) and (Ref 7) (i.e. f 1) does not get evaluated at all.
+    However, C[Fun f -> f 1 + f 0] does not get stuck until f 0 is evaluated so Ref 7 gets evaluated and the value 7 gets stored in heap.
+
+   4. Let dummy = x y In (0 0) ~= (0 1)
+
+    Not equivalent. Consider C = (Fun x -> Fun y -> *) (Fun z -> Ref 7) 0. Then C[Let dummy = x y in (0 0)] evaluates 'dummy' first and hence 7 gets stored in heap before the whole expression gets stuck due to (0 0).
+    However, C[(0 1)] does not store anything in heap and simply gets stuck right away.
+
+   5. (Fun x -> x x)(Fun x -> x x) =~ (Fun x -> x x x)(Fun x -> x x x)
+
+    Equivalent. By lemma 2.7.
+
+
+   c. As 3b. but for FbX.  Think carefully about what exception side effects could do.
+
+   1. (Fun y -> Not y) False =~ True 
+
+    Equivalent. There is no place where exception could occur.
+  
+   2. y + x =~ x + y
+
+    Not equivalent. Already shown in part a.
+
+   3. Fun f -> f 0 + f 1 =~ Fun f -> f 1 + f 0
+
+    Not equivalent. Consider C = (*) (Fun g -> If g = 0 Then (0 0) Else (Raise #MyExn 7)). Then C[Fun f -> f 0 + f 1] gets stuck while evaluating (0 0) (i.e. f 0) and no exception is raised by 'f 1'.
+    However, C[Fun f -> f 1 + f 0] does not get stuck until f 0 is evaluated so an exception is raised while evaluating 'f 1'.
+  
+   4. Let dummy = x y In (0 0) ~= (0 1)
+
+    Not equivalent. Consider C = (Fun x -> Fun y -> *) (Fun z -> Raise #MyExn 7) 0. Then C[Let dummy = x y in (0 0)] evaluates 'dummy' first and hence an exception is raised before the whole expression gets stuck due to (0 0).
+    However, C[(0 1)] does not raise an exception and simply gets stuck right away.
+
+   5. (Fun x -> x x)(Fun x -> x x) =~ (Fun x -> x x x)(Fun x -> x x x)
+
+    Equivalent. By lemma 2.7.
+
+   [35 points]
+
+
