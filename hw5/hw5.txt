@@ -8,7 +8,7 @@ HEADER: PLEASE FILL THIS IN
 
 Name                  : Sanghyun Choi
 List of team Members  :
-List of discussants   :
+List of discussants   : Professor Smith
 
 ----------------------------------------------------------------------------------------
   Section 1: Type Rules and Subtyping
@@ -114,13 +114,13 @@ G |- getradius {r = 4; t = 180} : Int                                           
     Let y = (Fun b -> Let w = Fun s -> Fun m -> b (s s) m In w w) In
     Let setbeh = Fun me -> y (Fun this -> Fun data -> Fun msg ->
                                                     Match msg With
-                                                        `add(n,c) -> (c <- `ack(0)); (this (n::data))
+                                                        `add(n) -> (this (n::data))
                                                         | `asList(c) -> (c <- data); (this data))  In
     Let testbcont = Fun m -> (Print (Head m)); (Print (Head (Tail m)));
                              (Print (Head (Tail (Tail m)))); (Fun x -> x) In
     Let testb = Fun me -> Fun d -> Fun m ->  
        Let s = Create(setbeh, []) In
-         (s <- `add(1,me)); (Match m With `ack(_) -> (s <- `add(2,me))); (Match m With `ack(_) -> (s <- `add(3,me))); (s <- `asList(me));
+         (s <- `add(1)); (s <- `add(2)); (s <- `add(3)); (s <- `asList(me));
          (testbcont)
     In Let testa = Create(testb,0)
     In testa <- `anymessage 0
@@ -144,6 +144,19 @@ G |- getradius {r = 4; t = 180} : Int                                           
     change the test so it waits for the `ack of each `add before sending the next add.
     You will have to use the testbcont idea in the tester above to sequence messages.
 
+    Let y = (Fun b -> Let w = Fun s -> Fun m -> b (s s) m In w w) In
+    Let setbeh = Fun me -> y (Fun this -> Fun data -> Fun msg ->
+                                                    Match msg With
+                                                        `add(p) -> ((Snd p) <- `ack(0)); (this ((Fst p)::data))
+                                                        | `asList(c) -> (c <- data); (this data))  In
+    Let testbcont = Fun m -> (Print (Head m)); (Print (Head (Tail m)));
+                             (Print (Head (Tail (Tail m)))); (Fun x -> x) In
+    Let testb = Fun me -> Fun d -> Fun m ->
+       Let s = Create(setbeh, []) In
+         (s <- `add(1,me)); (Fun m -> (Match m With `ack(n) -> (s <- `add(2,me))); (Fun m -> (Match m With `ack(n) -> (s <- `add(3,me))); (Fun m -> (Match m With `ack(n) -> (s <- `asList(me))); (testbcont))))
+    In Let testa = Create(testb,0)
+    In testa <- `anymessage 0
+
     [40 points]
 
 --------------------------------------------------------------------------------------------------
@@ -162,8 +175,7 @@ G |- getradius {r = 4; t = 180} : Int                                           
   
    2. y + x =~ x + y
 
-    Not equivalent. Consider C = (Fun x -> Fun y -> * 0) 1 (Fun z -> z). Then C[y + x] = (Fun x -> Fun y -> y + x 0) 1 (Fun z -> z) fails to evaluate.
-    However, C[x + y] = (Fun x -> Fun y -> x + y 0) 1 (Fun z -> z) = 1 + (Fun z -> z) 0 evaluates to 1.
+    Equivalent. Shown in class.
 
    3. Fun f -> f 0 + f 1 =~ Fun f -> f 1 + f 0
 
