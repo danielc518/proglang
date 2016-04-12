@@ -239,8 +239,8 @@ G |- getradius {r = 4; t = 180} : Int                                           
    4. Let dummy = x y In (0 0) ~= (0 1)
 
     Not equivalent. Consider the following context 'C':
-        Let n = Try (Fun x -> Fun y -> * ) (Fun z -> Raise #Return 1) 0 With #Return n -> n In
-        If x = 1 Then 1 Else 0 0
+        Let m = Try (Fun x -> Fun y -> * ) (Fun z -> Raise #Return 1) 0 With #Return n -> n In
+        If m = 1 Then 1 Else 0 0
 
     Then C[Let dummy = x y In (0 0)] will evaluate to 1 (since 'dummy = x y' is evaluated eagerly and hence raises an exception #Return) whereas C[(0 1)] will get stuck.
 
