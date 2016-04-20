@@ -26,14 +26,14 @@ Let G = Gamma (i.e. the map of types)
 
 G |- e1 : t1, G |- e2 : t2, ..., G |- en : tn
 --------------------------------------------------------------------------------
-G |- {l1 => e1; l2 => e2; ... ; ln => en} : {l1 => t1; t2 => t2; ... ; ln => tn}
+G |- {l1 => e1; l2 => e2; ... ; ln => en} : {l1 : t1; l2 : t2; ... ; ln : tn}
 
 G |- e : {l1 : t1; l2 : t2; lk : tk; ... ; ln : tn}
 ---------------------------------------------------
                 G |- e[lk] : vk
 
-Let {lk1, ..., lkn} be the set of keys that overlap between e and e' (can be empty)
 G |- e : {l1 : t1; l2 : t2; ...; lk1 : tk1; ...; lkn : tkn; ... ; ln : tn}, G |- e' : {l1' : t1'; l2' : t2'; ...; lk1 : tk1'; ...; lkn : tkn'; ... ; ln' : tn'}
+where {lk1, ..., lkn} are the set of common keys
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------
               G |- e @@ e' : {l1 : t1; l1' : t1'; l2 : t2; l2' : t2'; ...; lk1 : tk1'; ...; lkn : tkn'; ... ; ln : tn; ln' : tn'}
 
@@ -55,15 +55,35 @@ Hence the type of 'x @@ y' is very difficult to predict and to formalize as a ru
     Let getradius = (Fun p : {r:Int} -> p.r) In
       getradius {r = 4; t = 180} + getradius {r = 5; t = 120; g=128}
 
-Let G = (getradius : {r:Int} -> Int)
+*** Let G represent gamma such that G = (getradius : {r:Int} -> Int) ***
 
-                                                                            G |- 4 : Int    G |- 180 : Int                                                                                                   G |- 5 : Int    G |- 120 : Int    G |- 128 : Int
-                                                                           -------------------------------------------                                                                                       ------------------------------------------------------------
-G |- getradius : {r:Int} -> Int    G |- {r : Int; t : Int} <: {r : Int}     G |- {r = 4; t = 180} : {r : Int; t : Int}    G |- getradius : {r:Int} -> Int    G |- {r : Int; t : Int; g : Int} <: {r : Int}   G |- {r = 5; t = 120; g = 128} : {r : Int; t : Int; g : int}
-----------------------------------------------------------------------------------------------------------------------    ------------------------------------------------------------------------------------------------------------
-G |- getradius {r = 4; t = 180} : Int                                                                                     G |- getradius {r = 5; t = 120; g=128} : Int    
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|- Let getradius = (Fun p : {r:Int} -> p.r) In getradius {r = 4; t = 180} + getradius {r = 5; t = 120; g=128} : Int
+Part 1.
+
+                                    G |- 4 : Int    G |- 180 : Int                G |- Int <: Int
+                                    ------------------------------------------    ------------------------------------
+G |- getradius : {r:Int} -> Int     G |- {r = 4; t = 180} : {r : Int; t : Int}    G |- {r : Int; t : Int} <: {r : Int}
+----------------------------------------------------------------------------------------------------------------------
+G |- getradius {r = 4; t = 180} : Int                                                                                     
+
+Part 2.
+
+                                  G |- 5 : Int    G |- 120 : Int    G |- 128 : Int                G |- Int <: Int
+                                  ------------------------------------------------------------    ---------------------------------------------
+G |- getradius : {r:Int} -> Int   G |- {r = 5; t = 120; g = 128} : {r : Int; t : Int; g : int}    G |- {r : Int; t : Int; g : Int} <: {r : Int}
+-----------------------------------------------------------------------------------------------------------------------------------------------
+G |- getradius {r = 5; t = 120; g=128} : Int
+
+Part 3.
+
+(By Part 1)                              (By Part 2)
+-------------------------------------    --------------------------------------------
+G |- getradius {r = 4; t = 180} : Int    G |- getradius {r = 5; t = 120; g=128} : Int                                            (p : {r:Int}) |- r : Int
+-------------------------------------------------------------------------------------                                            --------------------------
+G |- getradius {r = 4; t = 180} + getradius {r = 5; t = 120; g=128} : Int                                                        (p : {r:Int}) |- p.r : Int
+-----------------------------------------------------------------------------------------------------------------------------    ------------------------------------------
+|- Fun getradius : ({r:Int} -> Int) -> getradius {r = 4; t = 180} + getradius {r = 5; t = 120; g=128} : {r:Int} -> Int -> Int    |- Fun p : {r:Int} -> p.r : {r:Int} -> Int 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|- (Fun getradius : ({r:Int} -> Int) -> getradius {r = 4; t = 180} + getradius {r = 5; t = 120; g=128}) (Fun p : {r:Int} -> p.r) : Int
 
     [25 Points]
 
@@ -198,7 +218,7 @@ G |- getradius {r = 4; t = 180} : Int                                           
   
    2. y + x =~ x + y
 
-    Equivalent. By the time x and y are substituted, the state will be equal due to eager evaluation.
+    Equivalent. By the time values are substituted for x and y, eager evaluation will induce equal state for both sides.
 
    3. Fun f -> f 0 + f 1 =~ Fun f -> f 1 + f 0
 
