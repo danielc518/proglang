@@ -39,21 +39,21 @@ let rec generate e gamma =
   match e with
   | Int _ -> (TInt, [])
   | Bool _ -> (TBool, [])
-  | Var x -> (lookup x gamma, [])
+  | Var v -> (lookup v gamma, [])
   | Not e -> let p = generate e gamma in (TBool, merge (snd p) [(fst p, TBool)])
   | And (e1, e2) -> let lhs = generate e1 gamma and rhs = generate e2 gamma in
         (TBool, (merge (merge (snd lhs) (snd rhs)) [ if (fst lhs) = (fst rhs) then ((fst rhs), TBool) else ((fst lhs), TBool); ((fst rhs), TBool) ]))
   | Or (e1, e2) -> let lhs = generate e1 gamma and rhs = generate e2 gamma in
         (TBool, (merge (merge (snd lhs) (snd rhs)) [ if (fst lhs) = (fst rhs) then ((fst rhs), TBool) else ((fst lhs), TBool); ((fst rhs), TBool) ]))
   | Equal (e1, e2) -> let lhs = generate e1 gamma and rhs = generate e2 gamma in
-        (TInt, (merge (merge (snd lhs) (snd rhs)) [ if (fst lhs) = (fst rhs) then ((fst rhs), TInt) else ((fst lhs), TInt); ((fst rhs), TInt) ]))
+        (TBool, (merge (merge (snd lhs) (snd rhs)) [ if (fst lhs) = (fst rhs) then ((fst rhs), TInt) else ((fst lhs), TInt); ((fst rhs), TInt) ]))
   | Plus (e1, e2) -> let lhs = generate e1 gamma and rhs = generate e2 gamma in
         (TInt, (merge (merge (snd lhs) (snd rhs)) [ if (fst lhs) = (fst rhs) then ((fst rhs), TInt) else ((fst lhs), TInt); ((fst rhs), TInt) ]))
   | Minus (e1, e2) -> let lhs = generate e1 gamma and rhs = generate e2 gamma in
         (TInt, (merge (merge (snd lhs) (snd rhs)) [ if (fst lhs) = (fst rhs) then ((fst rhs), TInt) else ((fst lhs), TInt); ((fst rhs), TInt) ]))
   | If (e1, e2, e3) -> let p1 = generate e1 gamma and p2 = generate e2 gamma and p3 = generate e3 gamma in let newTypeVar = freshTypeVar () in
         (newTypeVar, (merge (merge (merge (snd p1) (snd p2)) (snd p3)) [ ((fst p1), TBool); ((fst p2), newTypeVar); ((fst p3), newTypeVar) ]))
-  | Function (x, e) -> let newTypeVar = freshTypeVar () in let p = generate e (merge gamma [ (x, newTypeVar) ]) in
+  | Function (v, e) -> let newTypeVar = freshTypeVar () in let p = generate e (merge gamma [ (v, newTypeVar) ]) in
         ((TArrow (newTypeVar, (fst p))), (snd p))
   | Appl (e1, e2) -> let lhs = generate e1 gamma and rhs = generate e2 gamma in let newTypeVar = freshTypeVar () in 
         (newTypeVar, (merge (merge (snd lhs) (snd rhs)) [ ((fst lhs), (TArrow ((fst rhs), newTypeVar))) ]))
