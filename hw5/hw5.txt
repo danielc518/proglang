@@ -59,18 +59,18 @@ Hence the type of 'x @@ y' is very difficult to predict and to formalize as a ru
 
 Part 1.
 
-                                    G |- 4 : Int    G |- 180 : Int                G |- Int <: Int
-                                    ------------------------------------------    ------------------------------------
-G |- getradius : {r:Int} -> Int     G |- {r = 4; t = 180} : {r : Int; t : Int}    G |- {r : Int; t : Int} <: {r : Int}
-----------------------------------------------------------------------------------------------------------------------
+                                    G |- 4 : Int    G |- 180 : Int                |- Int <: Int
+                                    ------------------------------------------    ----------------------------------
+G |- getradius : {r:Int} -> Int     G |- {r = 4; t = 180} : {r : Int; t : Int}    |- {r : Int; t : Int} <: {r : Int}
+--------------------------------------------------------------------------------------------------------------------
 G |- getradius {r = 4; t = 180} : Int                                                                                     
 
 Part 2.
 
-                                  G |- 5 : Int    G |- 120 : Int    G |- 128 : Int                G |- Int <: Int
-                                  ------------------------------------------------------------    ---------------------------------------------
-G |- getradius : {r:Int} -> Int   G |- {r = 5; t = 120; g = 128} : {r : Int; t : Int; g : int}    G |- {r : Int; t : Int; g : Int} <: {r : Int}
------------------------------------------------------------------------------------------------------------------------------------------------
+                                  G |- 5 : Int    G |- 120 : Int    G |- 128 : Int                |- Int <: Int
+                                  ------------------------------------------------------------    -------------------------------------------
+G |- getradius : {r:Int} -> Int   G |- {r = 5; t = 120; g = 128} : {r : Int; t : Int; g : int}    |- {r : Int; t : Int; g : Int} <: {r : Int}
+---------------------------------------------------------------------------------------------------------------------------------------------
 G |- getradius {r = 5; t = 120; g=128} : Int
 
 Part 3.
@@ -134,7 +134,7 @@ G |- getradius {r = 4; t = 180} + getradius {r = 5; t = 120; g=128} : Int       
     Let y = (Fun b -> Let w = Fun s -> Fun m -> b (s s) m In w w) In
     Let setbeh = Fun me -> y (Fun this -> Fun data -> Fun msg ->
                                                     Match msg With
-                                                        `add(n) -> (this (n::data))
+                                                        `add(n) -> (this (n::data))    (* TODO: Must check duplicates! *)
                                                         | `asList(c) -> (c <- data); (this data))  In
     Let testbcont = Fun m -> (Print (Head m)); (Print (Head (Tail m)));
                              (Print (Head (Tail (Tail m)))); (Fun x -> x) In
@@ -167,7 +167,7 @@ G |- getradius {r = 4; t = 180} + getradius {r = 5; t = 120; g=128} : Int       
     Let y = (Fun b -> Let w = Fun s -> Fun m -> b (s s) m In w w) In
     Let setbeh = Fun me -> y (Fun this -> Fun data -> Fun msg ->
                                                     Match msg With
-                                                        `add(p) -> ((Snd p) <- `ack(0)); (this ((Fst p)::data))
+                                                        `add(p) -> ((Snd p) <- `ack(0)); (this ((Fst p)::data))    (* TODO: Must check duplicates! *)
                                                         | `asList(c) -> (c <- data); (this data))  In
     Let testbcont = Fun m -> (Print (Head m)); (Print (Head (Tail m)));
                              (Print (Head (Tail (Tail m)))); (Fun x -> x) In
